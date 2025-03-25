@@ -1,4 +1,4 @@
-import './App.css'
+// import './App.css'
 import Accordion from './components/index.jsx'
 
 function App() {
