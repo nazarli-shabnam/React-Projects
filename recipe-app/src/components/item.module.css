@@ -1,0 +1,36 @@
+.itemContainer {
+    display:flex;
+    flex-direction:row;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 4px 6px rgb(0, 0, 0, 0.1);
+    border-radius:8px;
+    padding:10px;
+    margin:10px;
+}
+.imageContainer {
+    width:100px;
+    height:100px;
+    overflow:hidden;
+    border-radius:50%;
+}
+.image{
+    width:100px;
+    height:auto;
+    border-radius: 20px;
+    object-fit:cover;
+}
+.nameContainer{
+margin-left:50px;
+}
+
+.name{
+    font-size:20px;
+    font-weight:600;
+    color:#393e46;  
+}
+.amount{
+    font-weight:bold;
+    margin-top:10px;
+    color:#29bb89;
+}
