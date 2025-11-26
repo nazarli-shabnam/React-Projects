@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Container,
@@ -56,12 +56,37 @@ const categories = [
   "Favorites",
 ];
 
+const initialReflections: Reflection[] = [
+  {
+    id: "1",
+    title: "Mercy in Surah Rahman",
+    content:
+      "Reflecting on the repeated verse in Surah Rahman reminds me that every blessing demands gratitude and careful stewardship.",
+    date: "2025-05-15",
+    category: "Qur'an",
+    source: "Surah 55",
+    isPublic: true,
+    isFavorite: true,
+  },
+  {
+    id: "2",
+    title: "Patience in Sahih Muslim",
+    content:
+      "The hadith about how amazing the affair of a believer is has helped me embrace patience during recent challenges at work.",
+    date: "2025-05-10",
+    category: "Hadith",
+    source: "Muslim 2999",
+    isPublic: false,
+    isFavorite: false,
+  },
+];
+
 const MyReflectionsPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-  const [reflections, setReflections] = useState<Reflection[]>([]);
+  const [reflections, setReflections] =
+    useState<Reflection[]>(initialReflections);
   const [selectedCategory, setSelectedCategory] = useState("All Reflections");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -70,6 +95,14 @@ const MyReflectionsPage: React.FC = () => {
   const [shareMenuAnchor, setShareMenuAnchor] = useState<null | HTMLElement>(
     null
   );
+  const [newReflection, setNewReflection] = useState({
+    title: "",
+    content: "",
+    category: "Personal Thoughts",
+    source: "",
+    isPublic: true,
+  });
+  const [sharingStatus, setSharingStatus] = useState<string | null>(null);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -82,24 +115,120 @@ const MyReflectionsPage: React.FC = () => {
 
   const handleDeleteConfirm = () => {
     if (selectedReflection) {
-      setReflections(reflections.filter((r) => r.id !== selectedReflection.id));
+      setReflections((prev) =>
+        prev.filter((r) => r.id !== selectedReflection.id)
+      );
       setDeleteDialogOpen(false);
       setSelectedReflection(null);
     }
   };
 
-  const handleShareClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handleShareClick = (
+    event: React.MouseEvent<HTMLElement>,
+    reflection: Reflection
+  ) => {
+    setSelectedReflection(reflection);
     setShareMenuAnchor(event.currentTarget);
+    setSharingStatus(null);
   };
 
   const handleShareClose = () => {
     setShareMenuAnchor(null);
+    setSharingStatus(null);
   };
 
-  const getColumnCount = () => {
-    if (isMobile) return 1;
-    if (isTablet) return 2;
-    return 3;
+  const handleToggleFavorite = (reflectionId: string) => {
+    setReflections((prev) =>
+      prev.map((reflection) =>
+        reflection.id === reflectionId
+          ? { ...reflection, isFavorite: !reflection.isFavorite }
+          : reflection
+      )
+    );
+  };
+
+  const handleTogglePrivacy = (reflectionId: string) => {
+    setReflections((prev) =>
+      prev.map((reflection) =>
+        reflection.id === reflectionId
+          ? { ...reflection, isPublic: !reflection.isPublic }
+          : reflection
+      )
+    );
+  };
+
+  const filteredReflections = useMemo(() => {
+    let filtered = reflections;
+
+    if (selectedCategory === "Favorites") {
+      filtered = filtered.filter((reflection) => reflection.isFavorite);
+    } else if (selectedCategory !== "All Reflections") {
+      filtered = filtered.filter(
+        (reflection) => reflection.category === selectedCategory
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (reflection) =>
+          reflection.title.toLowerCase().includes(query) ||
+          reflection.content.toLowerCase().includes(query) ||
+          reflection.source?.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [reflections, selectedCategory, searchQuery]);
+
+  const handleCreateReflection = () => {
+    if (!newReflection.title.trim() || !newReflection.content.trim()) {
+      return;
+    }
+
+    const reflection: Reflection = {
+      id: Date.now().toString(),
+      title: newReflection.title.trim(),
+      content: newReflection.content.trim(),
+      date: new Date().toISOString().split("T")[0],
+      category: newReflection.category,
+      source: newReflection.source?.trim() || undefined,
+      isPublic: newReflection.isPublic,
+      isFavorite: false,
+    };
+
+    setReflections((prev) => [reflection, ...prev]);
+    setNewReflection({
+      title: "",
+      content: "",
+      category: newReflection.category,
+      source: "",
+      isPublic: newReflection.isPublic,
+    });
+  };
+
+  const handleShareOption = async (option: string) => {
+    if (!selectedReflection) return;
+
+    const baseMessage = `${selectedReflection.title}\n\n${
+      selectedReflection.content
+    }\n\nSource: ${selectedReflection.source ?? "Personal notes"}`;
+    try {
+      if (option === "copy") {
+        await navigator.clipboard.writeText(baseMessage);
+        setSharingStatus("Copied to clipboard");
+      } else if (navigator.share && option === "native") {
+        await navigator.share({
+          title: selectedReflection.title,
+          text: baseMessage,
+        });
+        setSharingStatus("Shared successfully");
+      } else {
+        setSharingStatus("Sharing is not supported in this browser");
+      }
+    } catch {
+      setSharingStatus("Failed to share");
+    }
   };
 
   return (
@@ -131,28 +260,116 @@ const MyReflectionsPage: React.FC = () => {
       <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header Section */}
         <Box sx={{ mb: 4 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 3,
-            }}
-          >
-            <Typography variant="h4" component="h1">
-              My Reflections
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
+          <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+            My Reflections
+          </Typography>
+
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                label="Title"
+                fullWidth
+                value={newReflection.title}
+                onChange={(event) =>
+                  setNewReflection((prev) => ({
+                    ...prev,
+                    title: event.target.value,
+                  }))
+                }
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                label="Category"
+                fullWidth
+                select
+                value={newReflection.category}
+                onChange={(event) =>
+                  setNewReflection((prev) => ({
+                    ...prev,
+                    category: event.target.value,
+                  }))
+                }
+                SelectProps={{ native: true }}
+              >
+                {categories
+                  .filter((category) => category !== "All Reflections")
+                  .map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                label="Source (optional)"
+                fullWidth
+                value={newReflection.source}
+                onChange={(event) =>
+                  setNewReflection((prev) => ({
+                    ...prev,
+                    source: event.target.value,
+                  }))
+                }
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Reflection"
+                fullWidth
+                multiline
+                minRows={2}
+                value={newReflection.content}
+                onChange={(event) =>
+                  setNewReflection((prev) => ({
+                    ...prev,
+                    content: event.target.value,
+                  }))
+                }
+              />
+            </Grid>
+            <Grid
+              item
+              xs={12}
               sx={{
-                bgcolor: "primary.main",
-                "&:hover": { bgcolor: "primary.dark" },
+                display: "flex",
+                justifyContent: "space-between",
+                flexDirection: isMobile ? "column" : "row",
+                gap: 2,
               }}
             >
-              Add New Reflection
-            </Button>
-          </Box>
+              <Button
+                variant={newReflection.isPublic ? "contained" : "outlined"}
+                color="primary"
+                startIcon={
+                  newReflection.isPublic ? <PublicIcon /> : <LockIcon />
+                }
+                onClick={() =>
+                  setNewReflection((prev) => ({
+                    ...prev,
+                    isPublic: !prev.isPublic,
+                  }))
+                }
+              >
+                {newReflection.isPublic
+                  ? "Public Reflection"
+                  : "Private Reflection"}
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateReflection}
+                disabled={!newReflection.title || !newReflection.content}
+                sx={{
+                  bgcolor: "primary.main",
+                  "&:hover": { bgcolor: "primary.dark" },
+                }}
+              >
+                Add New Reflection
+              </Button>
+            </Grid>
+          </Grid>
 
           <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
             <TextField
@@ -203,7 +420,7 @@ const MyReflectionsPage: React.FC = () => {
         </Box>
 
         {/* Reflection List */}
-        {reflections.length === 0 ? (
+        {filteredReflections.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
@@ -222,7 +439,7 @@ const MyReflectionsPage: React.FC = () => {
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {reflections.map((reflection) => (
+            {filteredReflections.map((reflection) => (
               <Grid item xs={12} sm={6} md={4} key={reflection.id}>
                 <Card
                   sx={{
@@ -250,7 +467,10 @@ const MyReflectionsPage: React.FC = () => {
                       <Tooltip
                         title={reflection.isPublic ? "Public" : "Private"}
                       >
-                        <IconButton size="small">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleTogglePrivacy(reflection.id)}
+                        >
                           {reflection.isPublic ? <PublicIcon /> : <LockIcon />}
                         </IconButton>
                       </Tooltip>
@@ -265,7 +485,9 @@ const MyReflectionsPage: React.FC = () => {
                       color="text.secondary"
                       sx={{ mb: 2 }}
                     >
-                      {reflection.content.substring(0, 100)}...
+                      {reflection.content.length > 100
+                        ? `${reflection.content.substring(0, 100)}...`
+                        : reflection.content}
                     </Typography>
 
                     {reflection.source && (
@@ -306,7 +528,12 @@ const MyReflectionsPage: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Share">
-                        <IconButton size="small" onClick={handleShareClick}>
+                        <IconButton
+                          size="small"
+                          onClick={(event) =>
+                            handleShareClick(event, reflection)
+                          }
+                        >
                           <ShareIcon />
                         </IconButton>
                       </Tooltip>
@@ -317,7 +544,10 @@ const MyReflectionsPage: React.FC = () => {
                             : "Add to favorites"
                         }
                       >
-                        <IconButton size="small">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleToggleFavorite(reflection.id)}
+                        >
                           {reflection.isFavorite ? (
                             <BookmarkIcon />
                           ) : (
@@ -360,9 +590,26 @@ const MyReflectionsPage: React.FC = () => {
         open={Boolean(shareMenuAnchor)}
         onClose={handleShareClose}
       >
-        <MenuItem onClick={handleShareClose}>Share via Email</MenuItem>
-        <MenuItem onClick={handleShareClose}>Share via Link</MenuItem>
-        <MenuItem onClick={handleShareClose}>Share on Social Media</MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleShareOption("native");
+          }}
+        >
+          Share via native dialog
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleShareOption("copy");
+          }}
+        >
+          Copy to clipboard
+        </MenuItem>
+        <MenuItem onClick={handleShareClose}>Close</MenuItem>
+        {sharingStatus && (
+          <Typography variant="caption" sx={{ px: 2, pb: 1 }}>
+            {sharingStatus}
+          </Typography>
+        )}
       </Menu>
     </Box>
   );
