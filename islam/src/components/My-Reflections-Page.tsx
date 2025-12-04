@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Box,
   Container,
@@ -21,6 +21,10 @@ import {
   Menu,
   MenuItem,
   Tooltip,
+  Snackbar,
+  Alert,
+  Skeleton,
+  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -85,10 +89,32 @@ const MyReflectionsPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [reflections, setReflections] =
-    useState<Reflection[]>(initialReflections);
-  const [selectedCategory, setSelectedCategory] = useState("All Reflections");
+  // Load preferences from localStorage
+  const loadFromStorage = useCallback((key: string, defaultValue: any) => {
+    try {
+      const item = localStorage.getItem(`reflections_${key}`);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }, []);
+
+  const saveToStorage = useCallback((key: string, value: any) => {
+    try {
+      localStorage.setItem(`reflections_${key}`, JSON.stringify(value));
+    } catch (error) {
+      console.warn("Failed to save to localStorage:", error);
+    }
+  }, []);
+
+  const [reflections, setReflections] = useState<Reflection[]>(() =>
+    loadFromStorage("reflections", initialReflections)
+  );
+  const [selectedCategory, setSelectedCategory] = useState(() =>
+    loadFromStorage("category", "All Reflections")
+  );
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReflection, setSelectedReflection] =
     useState<Reflection | null>(null);
@@ -103,6 +129,45 @@ const MyReflectionsPage: React.FC = () => {
     isPublic: true,
   });
   const [sharingStatus, setSharingStatus] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error" | "warning" | "info",
+  });
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Simulate loading state on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Save reflections to localStorage
+  useEffect(() => {
+    saveToStorage("reflections", reflections);
+  }, [reflections, saveToStorage]);
+
+  // Save category preference to localStorage
+  useEffect(() => {
+    saveToStorage("category", selectedCategory);
+  }, [selectedCategory, saveToStorage]);
+
+  const showSnackbar = useCallback(
+    (message: string, severity: "success" | "error" | "warning" | "info" = "success") => {
+      setSnackbar({ open: true, message, severity });
+    },
+    []
+  );
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -120,6 +185,7 @@ const MyReflectionsPage: React.FC = () => {
       );
       setDeleteDialogOpen(false);
       setSelectedReflection(null);
+      showSnackbar("Reflection deleted successfully", "info");
     }
   };
 
@@ -137,25 +203,43 @@ const MyReflectionsPage: React.FC = () => {
     setSharingStatus(null);
   };
 
-  const handleToggleFavorite = (reflectionId: string) => {
-    setReflections((prev) =>
-      prev.map((reflection) =>
+  const handleToggleFavorite = useCallback((reflectionId: string) => {
+    setReflections((prev) => {
+      const updated = prev.map((reflection) =>
         reflection.id === reflectionId
           ? { ...reflection, isFavorite: !reflection.isFavorite }
           : reflection
-      )
-    );
-  };
+      );
+      const reflection = prev.find((r) => r.id === reflectionId);
+      if (reflection) {
+        showSnackbar(
+          reflection.isFavorite
+            ? "Removed from favorites"
+            : "Added to favorites",
+          "success"
+        );
+      }
+      return updated;
+    });
+  }, [showSnackbar]);
 
-  const handleTogglePrivacy = (reflectionId: string) => {
-    setReflections((prev) =>
-      prev.map((reflection) =>
+  const handleTogglePrivacy = useCallback((reflectionId: string) => {
+    setReflections((prev) => {
+      const updated = prev.map((reflection) =>
         reflection.id === reflectionId
           ? { ...reflection, isPublic: !reflection.isPublic }
           : reflection
-      )
-    );
-  };
+      );
+      const reflection = prev.find((r) => r.id === reflectionId);
+      if (reflection) {
+        showSnackbar(
+          reflection.isPublic ? "Made private" : "Made public",
+          "info"
+        );
+      }
+      return updated;
+    });
+  }, [showSnackbar]);
 
   const filteredReflections = useMemo(() => {
     let filtered = reflections;
@@ -168,8 +252,8 @@ const MyReflectionsPage: React.FC = () => {
       );
     }
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(
         (reflection) =>
           reflection.title.toLowerCase().includes(query) ||
@@ -179,10 +263,11 @@ const MyReflectionsPage: React.FC = () => {
     }
 
     return filtered;
-  }, [reflections, selectedCategory, searchQuery]);
+  }, [reflections, selectedCategory, debouncedSearchQuery]);
 
   const handleCreateReflection = () => {
     if (!newReflection.title.trim() || !newReflection.content.trim()) {
+      showSnackbar("Please fill in both title and content", "warning");
       return;
     }
 
@@ -205,6 +290,7 @@ const MyReflectionsPage: React.FC = () => {
       source: "",
       isPublic: newReflection.isPublic,
     });
+    showSnackbar("Reflection created successfully!", "success");
   };
 
   const handleShareOption = async (option: string) => {
@@ -217,17 +303,21 @@ const MyReflectionsPage: React.FC = () => {
       if (option === "copy") {
         await navigator.clipboard.writeText(baseMessage);
         setSharingStatus("Copied to clipboard");
+        showSnackbar("Copied to clipboard!", "success");
       } else if (navigator.share && option === "native") {
         await navigator.share({
           title: selectedReflection.title,
           text: baseMessage,
         });
         setSharingStatus("Shared successfully");
+        showSnackbar("Shared successfully!", "success");
       } else {
         setSharingStatus("Sharing is not supported in this browser");
+        showSnackbar("Sharing is not supported in this browser", "warning");
       }
-    } catch {
+    } catch (error) {
       setSharingStatus("Failed to share");
+      showSnackbar("Failed to share", "error");
     }
   };
 
@@ -267,8 +357,10 @@ const MyReflectionsPage: React.FC = () => {
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} md={4}>
               <TextField
+                id="reflection-title"
                 label="Title"
                 fullWidth
+                aria-label="Reflection title"
                 value={newReflection.title}
                 onChange={(event) =>
                   setNewReflection((prev) => ({
@@ -375,6 +467,7 @@ const MyReflectionsPage: React.FC = () => {
             <TextField
               fullWidth
               placeholder="Search reflections..."
+              aria-label="Search reflections"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -385,7 +478,7 @@ const MyReflectionsPage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button variant="outlined" startIcon={<FilterListIcon />}>
+            <Button variant="outlined" startIcon={<FilterListIcon />} aria-label="Filters">
               Filters
             </Button>
           </Box>
@@ -420,22 +513,80 @@ const MyReflectionsPage: React.FC = () => {
         </Box>
 
         {/* Reflection List */}
-        {filteredReflections.length === 0 ? (
+        {isLoading ? (
+          <Grid container spacing={3}>
+            {[1, 2, 3].map((i) => (
+              <Grid item xs={12} sm={6} md={4} key={i}>
+                <Card>
+                  <CardContent>
+                    <Skeleton variant="text" width="60%" height={24} />
+                    <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
+                    <Skeleton variant="rectangular" height={100} sx={{ mt: 2, borderRadius: 1 }} />
+                    <Skeleton variant="text" width="80%" height={20} sx={{ mt: 2 }} />
+                    <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                      <Skeleton variant="circular" width={32} height={32} />
+                      <Skeleton variant="circular" width={32} height={32} />
+                      <Skeleton variant="circular" width={32} height={32} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : filteredReflections.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
-              p: 4,
+              p: 6,
               textAlign: "center",
               bgcolor: "background.paper",
               borderRadius: 2,
             }}
+            role="status"
+            aria-live="polite"
           >
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Start Your First Reflection
-            </Typography>
-            <Button variant="contained" startIcon={<AddIcon />} sx={{ mt: 2 }}>
-              Create New Reflection
-            </Button>
+            {searchQuery || selectedCategory !== "All Reflections" ? (
+              <>
+                <SearchIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                <Typography variant="h5" color="text.secondary" gutterBottom>
+                  No reflections match your search
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Try adjusting your search criteria or selecting a different category.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterListIcon />}
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("All Reflections");
+                  }}
+                  aria-label="Clear filters"
+                >
+                  Clear Filters
+                </Button>
+              </>
+            ) : (
+              <>
+                <EditNote sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                <Typography variant="h5" color="text.secondary" gutterBottom>
+                  Start Your First Reflection
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Capture your thoughts, insights, and learnings from Islamic texts and personal experiences.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    document.getElementById("reflection-title")?.focus();
+                  }}
+                  aria-label="Create new reflection"
+                >
+                  Create New Reflection
+                </Button>
+              </>
+            )}
           </Paper>
         ) : (
           <Grid container spacing={3}>
@@ -515,13 +666,20 @@ const MyReflectionsPage: React.FC = () => {
                       }}
                     >
                       <Tooltip title="Edit">
-                        <IconButton size="small">
+                        <IconButton
+                          size="small"
+                          aria-label="Edit reflection"
+                          onClick={() => {
+                            showSnackbar("Edit feature coming soon!", "info");
+                          }}
+                        >
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
                         <IconButton
                           size="small"
+                          aria-label="Delete reflection"
                           onClick={() => handleDeleteClick(reflection)}
                         >
                           <DeleteIcon />
@@ -530,6 +688,7 @@ const MyReflectionsPage: React.FC = () => {
                       <Tooltip title="Share">
                         <IconButton
                           size="small"
+                          aria-label="Share reflection"
                           onClick={(event) =>
                             handleShareClick(event, reflection)
                           }
@@ -546,6 +705,11 @@ const MyReflectionsPage: React.FC = () => {
                       >
                         <IconButton
                           size="small"
+                          aria-label={
+                            reflection.isFavorite
+                              ? "Remove from favorites"
+                              : "Add to favorites"
+                          }
                           onClick={() => handleToggleFavorite(reflection.id)}
                         >
                           {reflection.isFavorite ? (
@@ -611,6 +775,22 @@ const MyReflectionsPage: React.FC = () => {
           </Typography>
         )}
       </Menu>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
