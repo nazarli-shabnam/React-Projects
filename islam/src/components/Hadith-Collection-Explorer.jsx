@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
@@ -28,6 +28,14 @@ import {
   useMediaQuery,
   AppBar,
   Toolbar,
+  Snackbar,
+  Alert,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -40,7 +48,13 @@ import {
   Mosque,
   ViewModule,
   ViewList,
+  Clear,
+  Menu,
+  DarkMode,
+  LightMode,
+  Home,
 } from "@mui/icons-material";
+import { useThemeMode } from "../contexts/ThemeContext";
 
 const sampleHadiths = [
   {
@@ -90,20 +104,60 @@ const HadithCollectionExplorer = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
+  const { mode, toggleMode } = useThemeMode();
 
-  const [activeCollection, setActiveCollection] = useState("all");
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
+  // Load preferences from localStorage
+  const loadFromStorage = (key, defaultValue) => {
+    try {
+      const item = localStorage.getItem(`hadith_${key}`);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  };
+
+  const saveToStorage = (key, value) => {
+    try {
+      localStorage.setItem(`hadith_${key}`, JSON.stringify(value));
+    } catch (error) {
+      console.warn("Failed to save to localStorage:", error);
+    }
+  };
+
+  const [activeCollection, setActiveCollection] = useState(() =>
+    loadFromStorage("collection", "all")
+  );
+  const [activeCategory, setActiveCategory] = useState(() =>
+    loadFromStorage("category", "all")
+  );
+  const [viewMode, setViewMode] = useState(() =>
+    loadFromStorage("viewMode", "grid")
+  );
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [bookmarkedHadiths, setBookmarkedHadiths] = useState([]);
+  const [bookmarkedHadiths, setBookmarkedHadiths] = useState(() =>
+    loadFromStorage("bookmarks", [])
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [authenticityFilter, setAuthenticityFilter] = useState("all");
-  const [narratorFilter, setNarratorFilter] = useState("all");
-  const [fontSize, setFontSize] = useState("medium");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [authenticityFilter, setAuthenticityFilter] = useState(() =>
+    loadFromStorage("authenticity", "all")
+  );
+  const [narratorFilter, setNarratorFilter] = useState(() =>
+    loadFromStorage("narrator", "all")
+  );
+  const [fontSize, setFontSize] = useState(() =>
+    loadFromStorage("fontSize", "medium")
+  );
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedHadithForShare, setSelectedHadithForShare] = useState(null);
   const [shareNote, setShareNote] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const hadiths = sampleHadiths;
 
@@ -154,6 +208,7 @@ const HadithCollectionExplorer = () => {
       case "copy":
         try {
           await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+          showSnackbar("Link copied to clipboard!", "success");
         } catch {
           console.warn("Clipboard API failed, falling back to prompt");
           window.prompt("Copy hadith", `${shareText}\n${shareUrl}`);
@@ -172,24 +227,88 @@ const HadithCollectionExplorer = () => {
     xlarge: "1.25rem",
   };
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Save preferences to localStorage
+  useEffect(() => {
+    saveToStorage("collection", activeCollection);
+  }, [activeCollection]);
+
+  useEffect(() => {
+    saveToStorage("category", activeCategory);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    saveToStorage("viewMode", viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    saveToStorage("authenticity", authenticityFilter);
+  }, [authenticityFilter]);
+
+  useEffect(() => {
+    saveToStorage("narrator", narratorFilter);
+  }, [narratorFilter]);
+
+  useEffect(() => {
+    saveToStorage("fontSize", fontSize);
+  }, [fontSize]);
+
+  useEffect(() => {
+    saveToStorage("bookmarks", bookmarkedHadiths);
+  }, [bookmarkedHadiths]);
+
   const toggleBookmark = (id) => {
-    setBookmarkedHadiths((prev) =>
-      prev.includes(id)
+    setBookmarkedHadiths((prev) => {
+      const isBookmarked = prev.includes(id);
+      const newBookmarks = isBookmarked
         ? prev.filter((hadithId) => hadithId !== id)
-        : [...prev, id]
-    );
+        : [...prev, id];
+      setSnackbar({
+        open: true,
+        message: isBookmarked ? "Removed from bookmarks" : "Added to bookmarks",
+        severity: "success",
+      });
+      return newBookmarks;
+    });
+  };
+
+  const handleResetFilters = () => {
+    setActiveCollection("all");
+    setActiveCategory("all");
+    setAuthenticityFilter("all");
+    setNarratorFilter("all");
+    setSearchQuery("");
+    setCurrentPage(1);
+    setSnackbar({
+      open: true,
+      message: "Filters reset",
+      severity: "info",
+    });
+  };
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({ open: true, message, severity });
   };
 
   const filteredHadiths = useMemo(
     () =>
       hadiths.filter((hadith) => {
         const matchesSearch =
-          searchQuery === "" ||
+          debouncedSearchQuery === "" ||
           hadith.translation
             .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          hadith.arabic.includes(searchQuery) ||
-          hadith.narrator.toLowerCase().includes(searchQuery.toLowerCase());
+            .includes(debouncedSearchQuery.toLowerCase()) ||
+          hadith.arabic.includes(debouncedSearchQuery) ||
+          hadith.narrator
+            .toLowerCase()
+            .includes(debouncedSearchQuery.toLowerCase());
         const matchesCollection =
           activeCollection === "all" || hadith.collection === activeCollection;
         const matchesCategory =
@@ -212,7 +331,7 @@ const HadithCollectionExplorer = () => {
       }),
     [
       hadiths,
-      searchQuery,
+      debouncedSearchQuery,
       activeCollection,
       activeCategory,
       authenticityFilter,
@@ -223,7 +342,7 @@ const HadithCollectionExplorer = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    searchQuery,
+    debouncedSearchQuery,
     activeCollection,
     activeCategory,
     authenticityFilter,
@@ -270,6 +389,13 @@ const HadithCollectionExplorer = () => {
         sx={{ bgcolor: "background.paper", color: "text.primary" }}
       >
         <Toolbar>
+          <IconButton
+            edge="start"
+            onClick={() => setMobileMenuOpen(true)}
+            sx={{ display: { xs: "block", md: "none" }, mr: 2 }}
+          >
+            <Menu />
+          </IconButton>
           <Box
             sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}
           >
@@ -294,8 +420,59 @@ const HadithCollectionExplorer = () => {
               Reflections
             </Button>
           </Box>
+          <IconButton onClick={toggleMode} sx={{ ml: 2 }}>
+            {mode === "dark" ? <LightMode /> : <DarkMode />}
+          </IconButton>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      >
+        <Box sx={{ width: 250, pt: 2 }}>
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ListItemIcon>
+                  <Home />
+                </ListItemIcon>
+                <ListItemText primary="Home" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/hadith"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ListItemIcon>
+                  <MenuBook />
+                </ListItemIcon>
+                <ListItemText primary="Hadith" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/reflections"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ListItemIcon>
+                  <EditNote />
+                </ListItemIcon>
+                <ListItemText primary="Reflections" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header Section */}
@@ -370,14 +547,25 @@ const HadithCollectionExplorer = () => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} sm={6} md={2}>
                 <Button
                   variant="outlined"
                   startIcon={<FilterList />}
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                   fullWidth
                 >
-                  Advanced Filters
+                  Advanced
+                </Button>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Clear />}
+                  onClick={handleResetFilters}
+                  fullWidth
+                  color="error"
+                >
+                  Reset
                 </Button>
               </Grid>
             </Grid>
@@ -464,13 +652,21 @@ const HadithCollectionExplorer = () => {
 
         {/* Hadith List */}
         {paginatedHadiths.length === 0 ? (
-          <Paper elevation={0} sx={{ p: 4, textAlign: "center" }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No hadiths match your filters yet.
+          <Paper elevation={0} sx={{ p: 6, textAlign: "center" }}>
+            <Search sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+            <Typography variant="h5" color="text.secondary" gutterBottom>
+              No hadiths match your filters
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Try relaxing the search criteria.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Try adjusting your search criteria or resetting the filters.
             </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<Clear />}
+              onClick={handleResetFilters}
+            >
+              Reset All Filters
+            </Button>
           </Paper>
         ) : (
           <>
@@ -705,6 +901,22 @@ const HadithCollectionExplorer = () => {
           <Button onClick={() => setShowShareDialog(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

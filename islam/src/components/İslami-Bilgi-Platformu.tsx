@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
@@ -19,6 +19,12 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   Mosque,
@@ -34,12 +40,19 @@ import {
   YouTube,
   Explore,
   CalendarToday,
+  Menu,
+  DarkMode,
+  LightMode,
+  Home,
 } from "@mui/icons-material";
+import { useThemeMode } from "../contexts/ThemeContext";
 
 const IslamiBilgiPlatformu: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
+  const { mode, toggleMode } = useThemeMode();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const currentDate = new Date();
   const formattedDate = currentDate.toLocaleDateString("en-US", {
@@ -144,6 +157,13 @@ const IslamiBilgiPlatformu: React.FC = () => {
         sx={{ bgcolor: "background.paper", color: "text.primary" }}
       >
         <Toolbar>
+          <IconButton
+            edge="start"
+            onClick={() => setMobileMenuOpen(true)}
+            sx={{ display: { xs: "block", md: "none" }, mr: 2 }}
+          >
+            <Menu />
+          </IconButton>
           <Box
             sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}
           >
@@ -168,8 +188,59 @@ const IslamiBilgiPlatformu: React.FC = () => {
               Reflections
             </Button>
           </Box>
+          <IconButton onClick={toggleMode} sx={{ ml: 2 }}>
+            {mode === "dark" ? <LightMode /> : <DarkMode />}
+          </IconButton>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      >
+        <Box sx={{ width: 250, pt: 2 }}>
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ListItemIcon>
+                  <Home />
+                </ListItemIcon>
+                <ListItemText primary="Home" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/hadith"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ListItemIcon>
+                  <MenuBook />
+                </ListItemIcon>
+                <ListItemText primary="Hadith" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/reflections"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ListItemIcon>
+                  <EditNote />
+                </ListItemIcon>
+                <ListItemText primary="Reflections" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
 
       {/* Hero Section */}
       <Box
