@@ -36,6 +36,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Skeleton,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -53,6 +54,8 @@ import {
   DarkMode,
   LightMode,
   Home,
+  MenuBook,
+  EditNote,
 } from "@mui/icons-material";
 import { useThemeMode } from "../contexts/ThemeContext";
 
@@ -158,16 +161,25 @@ const HadithCollectionExplorer = () => {
     severity: "success",
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const hadiths = sampleHadiths;
 
-  const handleShare = (hadithId) => {
+  // Simulate loading state on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleShare = useCallback((hadithId) => {
     setSelectedHadithForShare(hadithId);
     setShowShareDialog(true);
     setShareNote("");
-  };
+  }, []);
 
-  const handleShareAction = async (platform) => {
+  const handleShareAction = useCallback(async (platform) => {
     const hadith = hadiths.find((h) => h.id === selectedHadithForShare);
     if (!hadith) return;
 
@@ -218,7 +230,7 @@ const HadithCollectionExplorer = () => {
         break;
     }
     setShowShareDialog(false);
-  };
+  }, [hadiths, selectedHadithForShare, shareNote, showSnackbar]);
 
   const fontSizeMap = {
     small: "0.875rem",
@@ -264,7 +276,7 @@ const HadithCollectionExplorer = () => {
     saveToStorage("bookmarks", bookmarkedHadiths);
   }, [bookmarkedHadiths]);
 
-  const toggleBookmark = (id) => {
+  const toggleBookmark = useCallback((id) => {
     setBookmarkedHadiths((prev) => {
       const isBookmarked = prev.includes(id);
       const newBookmarks = isBookmarked
@@ -277,9 +289,9 @@ const HadithCollectionExplorer = () => {
       });
       return newBookmarks;
     });
-  };
+  }, []);
 
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setActiveCollection("all");
     setActiveCategory("all");
     setAuthenticityFilter("all");
@@ -291,11 +303,11 @@ const HadithCollectionExplorer = () => {
       message: "Filters reset",
       severity: "info",
     });
-  };
+  }, []);
 
-  const showSnackbar = (message, severity = "success") => {
+  const showSnackbar = useCallback((message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
   const filteredHadiths = useMemo(
     () =>
@@ -393,6 +405,7 @@ const HadithCollectionExplorer = () => {
             edge="start"
             onClick={() => setMobileMenuOpen(true)}
             sx={{ display: { xs: "block", md: "none" }, mr: 2 }}
+            aria-label="Open navigation menu"
           >
             <Menu />
           </IconButton>
@@ -420,7 +433,11 @@ const HadithCollectionExplorer = () => {
               Reflections
             </Button>
           </Box>
-          <IconButton onClick={toggleMode} sx={{ ml: 2 }}>
+          <IconButton
+            onClick={toggleMode}
+            sx={{ ml: 2 }}
+            aria-label={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
+          >
             {mode === "dark" ? <LightMode /> : <DarkMode />}
           </IconButton>
         </Toolbar>
@@ -499,6 +516,7 @@ const HadithCollectionExplorer = () => {
                 <TextField
                   fullWidth
                   placeholder="Search hadith by text, narrator, or keywords..."
+                  aria-label="Search hadith"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   InputProps={{
@@ -553,6 +571,8 @@ const HadithCollectionExplorer = () => {
                   startIcon={<FilterList />}
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                   fullWidth
+                  aria-label="Toggle advanced filters"
+                  aria-expanded={showAdvancedFilters}
                 >
                   Advanced
                 </Button>
@@ -564,6 +584,7 @@ const HadithCollectionExplorer = () => {
                   onClick={handleResetFilters}
                   fullWidth
                   color="error"
+                  aria-label="Reset all filters"
                 >
                   Reset
                 </Button>
@@ -651,8 +672,37 @@ const HadithCollectionExplorer = () => {
         </Box>
 
         {/* Hadith List */}
-        {paginatedHadiths.length === 0 ? (
-          <Paper elevation={0} sx={{ p: 6, textAlign: "center" }}>
+        {isLoading ? (
+          <Grid container spacing={3}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Grid item xs={12} sm={6} md={4} key={i}>
+                <Card>
+                  <CardContent>
+                    <Skeleton variant="text" width="60%" height={24} />
+                    <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
+                    <Skeleton variant="rectangular" height={80} sx={{ mt: 2, borderRadius: 1 }} />
+                    <Skeleton variant="text" width="100%" height={60} sx={{ mt: 2 }} />
+                    <Skeleton variant="text" width="80%" height={20} sx={{ mt: 1 }} />
+                    <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                      <Skeleton variant="rectangular" width={60} height={24} />
+                      <Skeleton variant="rectangular" width={60} height={24} />
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                      <Skeleton variant="text" width="40%" height={20} />
+                      <Skeleton variant="circular" width={32} height={32} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : paginatedHadiths.length === 0 ? (
+          <Paper
+            elevation={0}
+            sx={{ p: 6, textAlign: "center" }}
+            role="status"
+            aria-live="polite"
+          >
             <Search sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
             <Typography variant="h5" color="text.secondary" gutterBottom>
               No hadiths match your filters
@@ -664,6 +714,7 @@ const HadithCollectionExplorer = () => {
               variant="outlined"
               startIcon={<Clear />}
               onClick={handleResetFilters}
+              aria-label="Reset all filters"
             >
               Reset All Filters
             </Button>
@@ -722,6 +773,11 @@ const HadithCollectionExplorer = () => {
                             bookmarkedHadiths.includes(hadith.id)
                               ? "primary"
                               : "default"
+                          }
+                          aria-label={
+                            bookmarkedHadiths.includes(hadith.id)
+                              ? "Remove bookmark"
+                              : "Add bookmark"
                           }
                         >
                           {bookmarkedHadiths.includes(hadith.id) ? (
@@ -797,10 +853,11 @@ const HadithCollectionExplorer = () => {
                             size="small"
                             startIcon={<Share />}
                             onClick={() => handleShare(hadith.id)}
+                            aria-label="Share hadith"
                           >
                             Share
                           </Button>
-                          <IconButton size="small">
+                          <IconButton size="small" aria-label="Play audio">
                             <VolumeUp />
                           </IconButton>
                         </Box>
