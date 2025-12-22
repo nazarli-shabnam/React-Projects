@@ -24,7 +24,6 @@ import {
   Snackbar,
   Alert,
   Skeleton,
-  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -38,6 +37,7 @@ import {
   FilterList as FilterListIcon,
   Public as PublicIcon,
   Lock as LockIcon,
+  EditNote as EditNoteIcon,
 } from "@mui/icons-material";
 
 interface Reflection {
@@ -90,20 +90,12 @@ const MyReflectionsPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Load preferences from localStorage
-  const loadFromStorage = useCallback((key: string, defaultValue: any) => {
+  const loadFromStorage = useCallback((key: string, defaultValue: unknown) => {
     try {
       const item = localStorage.getItem(`reflections_${key}`);
       return item ? JSON.parse(item) : defaultValue;
     } catch {
       return defaultValue;
-    }
-  }, []);
-
-  const saveToStorage = useCallback((key: string, value: any) => {
-    try {
-      localStorage.setItem(`reflections_${key}`, JSON.stringify(value));
-    } catch (error) {
-      console.warn("Failed to save to localStorage:", error);
     }
   }, []);
 
@@ -136,6 +128,35 @@ const MyReflectionsPage: React.FC = () => {
     severity: "success" as "success" | "error" | "warning" | "info",
   });
 
+  const showSnackbar = useCallback(
+    (
+      message: string,
+      severity: "success" | "error" | "warning" | "info" = "success"
+    ) => {
+      setSnackbar({ open: true, message, severity });
+    },
+    []
+  );
+
+  const saveToStorage = useCallback(
+    (key: string, value: unknown) => {
+      try {
+        localStorage.setItem(`reflections_${key}`, JSON.stringify(value));
+      } catch (error) {
+        // Only log in development
+        if (import.meta.env.DEV) {
+          console.warn("Failed to save to localStorage:", error);
+        }
+        // Show user-friendly error message
+        showSnackbar(
+          "Failed to save data. Please check your browser settings.",
+          "error"
+        );
+      }
+    },
+    [showSnackbar]
+  );
+
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -161,13 +182,6 @@ const MyReflectionsPage: React.FC = () => {
   useEffect(() => {
     saveToStorage("category", selectedCategory);
   }, [selectedCategory, saveToStorage]);
-
-  const showSnackbar = useCallback(
-    (message: string, severity: "success" | "error" | "warning" | "info" = "success") => {
-      setSnackbar({ open: true, message, severity });
-    },
-    []
-  );
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -203,43 +217,49 @@ const MyReflectionsPage: React.FC = () => {
     setSharingStatus(null);
   };
 
-  const handleToggleFavorite = useCallback((reflectionId: string) => {
-    setReflections((prev) => {
-      const updated = prev.map((reflection) =>
-        reflection.id === reflectionId
-          ? { ...reflection, isFavorite: !reflection.isFavorite }
-          : reflection
-      );
-      const reflection = prev.find((r) => r.id === reflectionId);
-      if (reflection) {
-        showSnackbar(
-          reflection.isFavorite
-            ? "Removed from favorites"
-            : "Added to favorites",
-          "success"
+  const handleToggleFavorite = useCallback(
+    (reflectionId: string) => {
+      setReflections((prev) => {
+        const updated = prev.map((reflection) =>
+          reflection.id === reflectionId
+            ? { ...reflection, isFavorite: !reflection.isFavorite }
+            : reflection
         );
-      }
-      return updated;
-    });
-  }, [showSnackbar]);
+        const reflection = prev.find((r) => r.id === reflectionId);
+        if (reflection) {
+          showSnackbar(
+            reflection.isFavorite
+              ? "Removed from favorites"
+              : "Added to favorites",
+            "success"
+          );
+        }
+        return updated;
+      });
+    },
+    [showSnackbar]
+  );
 
-  const handleTogglePrivacy = useCallback((reflectionId: string) => {
-    setReflections((prev) => {
-      const updated = prev.map((reflection) =>
-        reflection.id === reflectionId
-          ? { ...reflection, isPublic: !reflection.isPublic }
-          : reflection
-      );
-      const reflection = prev.find((r) => r.id === reflectionId);
-      if (reflection) {
-        showSnackbar(
-          reflection.isPublic ? "Made private" : "Made public",
-          "info"
+  const handleTogglePrivacy = useCallback(
+    (reflectionId: string) => {
+      setReflections((prev) => {
+        const updated = prev.map((reflection) =>
+          reflection.id === reflectionId
+            ? { ...reflection, isPublic: !reflection.isPublic }
+            : reflection
         );
-      }
-      return updated;
-    });
-  }, [showSnackbar]);
+        const reflection = prev.find((r) => r.id === reflectionId);
+        if (reflection) {
+          showSnackbar(
+            reflection.isPublic ? "Made private" : "Made public",
+            "info"
+          );
+        }
+        return updated;
+      });
+    },
+    [showSnackbar]
+  );
 
   const filteredReflections = useMemo(() => {
     let filtered = reflections;
@@ -266,18 +286,61 @@ const MyReflectionsPage: React.FC = () => {
   }, [reflections, selectedCategory, debouncedSearchQuery]);
 
   const handleCreateReflection = () => {
-    if (!newReflection.title.trim() || !newReflection.content.trim()) {
+    // Validation
+    const title = newReflection.title.trim();
+    const content = newReflection.content.trim();
+    const source = newReflection.source?.trim() || "";
+
+    if (!title || !content) {
       showSnackbar("Please fill in both title and content", "warning");
       return;
     }
 
+    // Max length validation
+    const MAX_TITLE_LENGTH = 200;
+    const MAX_CONTENT_LENGTH = 5000;
+    const MAX_SOURCE_LENGTH = 500;
+
+    if (title.length > MAX_TITLE_LENGTH) {
+      showSnackbar(
+        `Title must be less than ${MAX_TITLE_LENGTH} characters`,
+        "warning"
+      );
+      return;
+    }
+
+    if (content.length > MAX_CONTENT_LENGTH) {
+      showSnackbar(
+        `Content must be less than ${MAX_CONTENT_LENGTH} characters`,
+        "warning"
+      );
+      return;
+    }
+
+    if (source.length > MAX_SOURCE_LENGTH) {
+      showSnackbar(
+        `Source must be less than ${MAX_SOURCE_LENGTH} characters`,
+        "warning"
+      );
+      return;
+    }
+
+    // Sanitize input (basic XSS prevention)
+    const sanitizeInput = (input: string) => {
+      return input
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#x27;");
+    };
+
     const reflection: Reflection = {
       id: Date.now().toString(),
-      title: newReflection.title.trim(),
-      content: newReflection.content.trim(),
+      title: sanitizeInput(title),
+      content: sanitizeInput(content),
       date: new Date().toISOString().split("T")[0],
       category: newReflection.category,
-      source: newReflection.source?.trim() || undefined,
+      source: source ? sanitizeInput(source) : undefined,
       isPublic: newReflection.isPublic,
       isFavorite: false,
     };
@@ -315,7 +378,7 @@ const MyReflectionsPage: React.FC = () => {
         setSharingStatus("Sharing is not supported in this browser");
         showSnackbar("Sharing is not supported in this browser", "warning");
       }
-    } catch (error) {
+    } catch {
       setSharingStatus("Failed to share");
       showSnackbar("Failed to share", "error");
     }
@@ -355,6 +418,7 @@ const MyReflectionsPage: React.FC = () => {
           </Typography>
 
           <Grid container spacing={2} sx={{ mb: 3 }}>
+            {/* @ts-expect-error - MUI v7 Grid item prop type issue */}
             <Grid item xs={12} md={4}>
               <TextField
                 id="reflection-title"
@@ -368,8 +432,11 @@ const MyReflectionsPage: React.FC = () => {
                     title: event.target.value,
                   }))
                 }
+                inputProps={{ maxLength: 200 }}
+                helperText={`${newReflection.title.length}/200 characters`}
               />
             </Grid>
+            {/* @ts-expect-error - MUI Grid item prop type issue with MUI v7 */}
             <Grid item xs={12} md={4}>
               <TextField
                 label="Category"
@@ -393,6 +460,7 @@ const MyReflectionsPage: React.FC = () => {
                   ))}
               </TextField>
             </Grid>
+            {/* @ts-expect-error - MUI Grid item prop type issue with MUI v7 */}
             <Grid item xs={12} md={4}>
               <TextField
                 label="Source (optional)"
@@ -406,6 +474,7 @@ const MyReflectionsPage: React.FC = () => {
                 }
               />
             </Grid>
+            {/* @ts-expect-error - MUI Grid item prop type issue with MUI v7 */}
             <Grid item xs={12}>
               <TextField
                 label="Reflection"
@@ -421,6 +490,7 @@ const MyReflectionsPage: React.FC = () => {
                 }
               />
             </Grid>
+            {/* @ts-expect-error - MUI Grid item prop type issue with MUI v7 */}
             <Grid
               item
               xs={12}
@@ -478,7 +548,11 @@ const MyReflectionsPage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button variant="outlined" startIcon={<FilterListIcon />} aria-label="Filters">
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              aria-label="Filters"
+            >
               Filters
             </Button>
           </Box>
@@ -516,13 +590,28 @@ const MyReflectionsPage: React.FC = () => {
         {isLoading ? (
           <Grid container spacing={3}>
             {[1, 2, 3].map((i) => (
+              // @ts-expect-error - MUI Grid item prop type issue with MUI v7
               <Grid item xs={12} sm={6} md={4} key={i}>
                 <Card>
                   <CardContent>
                     <Skeleton variant="text" width="60%" height={24} />
-                    <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
-                    <Skeleton variant="rectangular" height={100} sx={{ mt: 2, borderRadius: 1 }} />
-                    <Skeleton variant="text" width="80%" height={20} sx={{ mt: 2 }} />
+                    <Skeleton
+                      variant="text"
+                      width="40%"
+                      height={20}
+                      sx={{ mt: 1 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      height={100}
+                      sx={{ mt: 2, borderRadius: 1 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="80%"
+                      height={20}
+                      sx={{ mt: 2 }}
+                    />
                     <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
                       <Skeleton variant="circular" width={32} height={32} />
                       <Skeleton variant="circular" width={32} height={32} />
@@ -547,12 +636,19 @@ const MyReflectionsPage: React.FC = () => {
           >
             {searchQuery || selectedCategory !== "All Reflections" ? (
               <>
-                <SearchIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                <SearchIcon
+                  sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+                />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
                   No reflections match your search
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Try adjusting your search criteria or selecting a different category.
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
+                  Try adjusting your search criteria or selecting a different
+                  category.
                 </Typography>
                 <Button
                   variant="outlined"
@@ -568,12 +664,19 @@ const MyReflectionsPage: React.FC = () => {
               </>
             ) : (
               <>
-                <EditNote sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                <EditNoteIcon
+                  sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+                />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
                   Start Your First Reflection
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Capture your thoughts, insights, and learnings from Islamic texts and personal experiences.
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
+                  Capture your thoughts, insights, and learnings from Islamic
+                  texts and personal experiences.
                 </Typography>
                 <Button
                   variant="contained"
@@ -591,16 +694,36 @@ const MyReflectionsPage: React.FC = () => {
         ) : (
           <Grid container spacing={3}>
             {filteredReflections.map((reflection) => (
+              // @ts-expect-error - MUI Grid item prop type issue with MUI v7
               <Grid item xs={12} sm={6} md={4} key={reflection.id}>
                 <Card
                   sx={{
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
-                    transition: "transform 0.2s, box-shadow 0.2s",
+                    position: "relative",
+                    overflow: "hidden",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: "4px",
+                      background: "linear-gradient(90deg, #10B981, #34D399)",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                    },
                     "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: 4,
+                      transform: "translateY(-8px) scale(1.02)",
+                      boxShadow:
+                        theme.palette.mode === "dark"
+                          ? "0 20px 40px -10px rgba(0, 0, 0, 0.5)"
+                          : "0 20px 40px -10px rgba(16, 185, 129, 0.15)",
+                      "&::before": {
+                        opacity: 1,
+                      },
                     },
                   }}
                 >
