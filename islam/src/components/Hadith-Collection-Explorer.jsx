@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Box,
   Container,
@@ -106,7 +106,6 @@ const sampleHadiths = [
 const HadithCollectionExplorer = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const navigate = useNavigate();
   const { mode, toggleMode } = useThemeMode();
 
   // Load preferences from localStorage
@@ -119,13 +118,24 @@ const HadithCollectionExplorer = () => {
     }
   };
 
-  const saveToStorage = (key, value) => {
-    try {
-      localStorage.setItem(`hadith_${key}`, JSON.stringify(value));
-    } catch (error) {
-      console.warn("Failed to save to localStorage:", error);
-    }
-  };
+  const saveToStorage = useCallback(
+    (key, value) => {
+      try {
+        localStorage.setItem(`hadith_${key}`, JSON.stringify(value));
+      } catch (error) {
+        // Only log in development
+        if (import.meta.env.DEV) {
+          console.warn("Failed to save to localStorage:", error);
+        }
+        // Show user-friendly error message
+        showSnackbar(
+          "Failed to save preferences. Please check your browser settings.",
+          "error"
+        );
+      }
+    },
+    [showSnackbar]
+  );
 
   const [activeCollection, setActiveCollection] = useState(() =>
     loadFromStorage("collection", "all")
@@ -179,58 +189,7 @@ const HadithCollectionExplorer = () => {
     setShareNote("");
   }, []);
 
-  const handleShareAction = useCallback(async (platform) => {
-    const hadith = hadiths.find((h) => h.id === selectedHadithForShare);
-    if (!hadith) return;
-
-    const shareText = `${hadith.translation}\n\n${
-      shareNote ? `${shareNote}\n\n` : ""
-    }${hadith.reference}`;
-    const shareUrl = `https://nurweb.com/hadith/${hadith.id}`;
-
-    switch (platform) {
-      case "facebook":
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-            shareUrl
-          )}`
-        );
-        break;
-      case "twitter":
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-            shareText
-          )}&url=${encodeURIComponent(shareUrl)}`
-        );
-        break;
-      case "whatsapp":
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(
-            `${shareText}\n${shareUrl}`
-          )}`
-        );
-        break;
-      case "email":
-        window.open(
-          `mailto:?subject=Shared Hadith&body=${encodeURIComponent(
-            `${shareText}\n${shareUrl}`
-          )}`
-        );
-        break;
-      case "copy":
-        try {
-          await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-          showSnackbar("Link copied to clipboard!", "success");
-        } catch {
-          console.warn("Clipboard API failed, falling back to prompt");
-          window.prompt("Copy hadith", `${shareText}\n${shareUrl}`);
-        }
-        break;
-      default:
-        break;
-    }
-    setShowShareDialog(false);
-  }, [hadiths, selectedHadithForShare, shareNote, showSnackbar]);
+ 
 
   const fontSizeMap = {
     small: "0.875rem",
@@ -510,7 +469,23 @@ const HadithCollectionExplorer = () => {
           </Typography>
 
           {/* Filter + Search section */}
-          <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
+          <Paper
+            elevation={1}
+            sx={{
+              p: 3,
+              mb: 3,
+              background:
+                theme.palette.mode === "dark"
+                  ? "linear-gradient(135deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.8) 100%)"
+                  : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(249, 250, 251, 0.9) 100%)",
+              backdropFilter: "blur(10px)",
+              border: `1px solid ${
+                theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(0, 0, 0, 0.05)"
+              }`,
+            }}
+          >
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={4}>
                 <TextField
@@ -679,15 +654,40 @@ const HadithCollectionExplorer = () => {
                 <Card>
                   <CardContent>
                     <Skeleton variant="text" width="60%" height={24} />
-                    <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
-                    <Skeleton variant="rectangular" height={80} sx={{ mt: 2, borderRadius: 1 }} />
-                    <Skeleton variant="text" width="100%" height={60} sx={{ mt: 2 }} />
-                    <Skeleton variant="text" width="80%" height={20} sx={{ mt: 1 }} />
+                    <Skeleton
+                      variant="text"
+                      width="40%"
+                      height={20}
+                      sx={{ mt: 1 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      height={80}
+                      sx={{ mt: 2, borderRadius: 1 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="100%"
+                      height={60}
+                      sx={{ mt: 2 }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="80%"
+                      height={20}
+                      sx={{ mt: 1 }}
+                    />
                     <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
                       <Skeleton variant="rectangular" width={60} height={24} />
                       <Skeleton variant="rectangular" width={60} height={24} />
                     </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mt: 2,
+                      }}
+                    >
                       <Skeleton variant="text" width="40%" height={20} />
                       <Skeleton variant="circular" width={32} height={32} />
                     </Box>
@@ -735,10 +735,29 @@ const HadithCollectionExplorer = () => {
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
-                      transition: "transform 0.2s, box-shadow 0.2s",
+                      position: "relative",
+                      overflow: "hidden",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: "4px",
+                        background: "linear-gradient(90deg, #10B981, #34D399)",
+                        opacity: 0,
+                        transition: "opacity 0.3s ease",
+                      },
                       "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: 4,
+                        transform: "translateY(-8px) scale(1.02)",
+                        boxShadow:
+                          theme.palette.mode === "dark"
+                            ? "0 20px 40px -10px rgba(0, 0, 0, 0.5)"
+                            : "0 20px 40px -10px rgba(16, 185, 129, 0.15)",
+                        "&::before": {
+                          opacity: 1,
+                        },
                       },
                     }}
                   >
