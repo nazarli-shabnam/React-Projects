@@ -8,7 +8,7 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
+  // CardMedia,
   CardActions,
   AppBar,
   Toolbar,
@@ -161,6 +161,7 @@ const IslamiBilgiPlatformu: React.FC = () => {
             edge="start"
             onClick={() => setMobileMenuOpen(true)}
             sx={{ display: { xs: "block", md: "none" }, mr: 2 }}
+            aria-label="Open navigation menu"
           >
             <Menu />
           </IconButton>
@@ -188,7 +189,11 @@ const IslamiBilgiPlatformu: React.FC = () => {
               Reflections
             </Button>
           </Box>
-          <IconButton onClick={toggleMode} sx={{ ml: 2 }}>
+          <IconButton
+            onClick={toggleMode}
+            sx={{ ml: 2 }}
+            aria-label={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
+          >
             {mode === "dark" ? <LightMode /> : <DarkMode />}
           </IconButton>
         </Toolbar>
@@ -250,20 +255,33 @@ const IslamiBilgiPlatformu: React.FC = () => {
           color: "white",
           py: { xs: 8, md: 12 },
           overflow: "hidden",
-        }}
-      >
-        <Box
-          sx={{
+          background:
+            "linear-gradient(135deg, #10B981 0%, #059669 50%, #047857 100%)",
+          "&::before": {
+            content: '""',
             position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             background:
-              "linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(4, 120, 87, 0.9) 100%)",
-            opacity: 0.1,
-          }}
-        />
+              "radial-gradient(circle at 20% 50%, rgba(52, 211, 153, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(4, 120, 87, 0.3) 0%, transparent 50%)",
+            opacity: 0.6,
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage:
+              mode === "dark"
+                ? "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%)"
+                : "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)",
+          },
+        }}
+      >
         <Container maxWidth="lg" sx={{ position: "relative" }}>
           <Box sx={{ maxWidth: 600 }}>
             <Typography
@@ -286,7 +304,16 @@ const IslamiBilgiPlatformu: React.FC = () => {
                 sx={{
                   bgcolor: "white",
                   color: "primary.main",
-                  "&:hover": { bgcolor: "grey.100" },
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.5,
+                  boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.15)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    bgcolor: "grey.100",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 6px 20px 0 rgba(0, 0, 0, 0.2)",
+                  },
                 }}
               >
                 Start Exploring
@@ -297,10 +324,19 @@ const IslamiBilgiPlatformu: React.FC = () => {
                 onClick={() => navigate("/reflections")}
                 sx={{
                   borderColor: "white",
+                  borderWidth: 2,
                   color: "white",
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.5,
+                  backdropFilter: "blur(10px)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
                     borderColor: "white",
-                    bgcolor: "rgba(255,255,255,0.1)",
+                    borderWidth: 2,
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 4px 14px 0 rgba(255, 255, 255, 0.2)",
                   },
                 }}
               >
@@ -330,20 +366,56 @@ const IslamiBilgiPlatformu: React.FC = () => {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  transition: "transform 0.2s, box-shadow 0.2s",
+                  position: "relative",
+                  overflow: "hidden",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "4px",
+                    background: "linear-gradient(90deg, #10B981, #34D399)",
+                    opacity: 0,
+                    transition: "opacity 0.3s ease",
+                  },
                   "&:hover": {
-                    transform: "translateY(-8px)",
-                    boxShadow: 6,
+                    transform: "translateY(-12px) scale(1.02)",
+                    boxShadow:
+                      mode === "dark"
+                        ? "0 20px 40px -10px rgba(0, 0, 0, 0.5)"
+                        : "0 20px 40px -10px rgba(16, 185, 129, 0.2)",
+                    "&::before": {
+                      opacity: 1,
+                    },
                   },
                 }}
               >
                 <Box
                   sx={{
-                    bgcolor: "primary.light",
+                    background:
+                      "linear-gradient(135deg, #10B981 0%, #34D399 100%)",
                     color: "white",
                     p: 3,
                     display: "flex",
                     justifyContent: "center",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      top: "-50%",
+                      right: "-50%",
+                      width: "200%",
+                      height: "200%",
+                      background:
+                        "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
+                      transition: "transform 0.5s ease",
+                    },
+                    "&:hover::after": {
+                      transform: "scale(1.5)",
+                    },
                   }}
                 >
                   {feature.icon}
@@ -356,11 +428,24 @@ const IslamiBilgiPlatformu: React.FC = () => {
                     {feature.description}
                   </Typography>
                 </CardContent>
-                <CardActions>
+                <CardActions sx={{ p: 2, pt: 0 }}>
                   <Button
-                    size="small"
+                    size="medium"
                     endIcon={<ArrowForward />}
                     onClick={() => navigate(feature.path)}
+                    sx={{
+                      fontWeight: 600,
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        transform: "translateX(4px)",
+                        "& .MuiButton-endIcon": {
+                          transform: "translateX(4px)",
+                        },
+                      },
+                      "& .MuiButton-endIcon": {
+                        transition: "transform 0.2s ease",
+                      },
+                    }}
                   >
                     Learn More
                   </Button>
