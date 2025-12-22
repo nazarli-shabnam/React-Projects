@@ -189,7 +189,70 @@ const HadithCollectionExplorer = () => {
     setShareNote("");
   }, []);
 
- 
+  const handleShareAction = useCallback(
+    async (platform) => {
+      const hadith = hadiths.find((h) => h.id === selectedHadithForShare);
+      if (!hadith) return;
+
+      const shareText = `${hadith.translation}\n\n${
+        shareNote ? `${shareNote}\n\n` : ""
+      }${hadith.reference}`;
+      const shareUrl = `https://nurweb.com/hadith/${hadith.id}`;
+
+      switch (platform) {
+        case "facebook":
+          window.open(
+            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+              shareUrl
+            )}`
+          );
+          break;
+        case "twitter":
+          window.open(
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+              shareText
+            )}&url=${encodeURIComponent(shareUrl)}`
+          );
+          break;
+        case "whatsapp":
+          window.open(
+            `https://wa.me/?text=${encodeURIComponent(
+              `${shareText}\n${shareUrl}`
+            )}`
+          );
+          break;
+        case "email":
+          window.open(
+            `mailto:?subject=Shared Hadith&body=${encodeURIComponent(
+              `${shareText}\n${shareUrl}`
+            )}`
+          );
+          break;
+        case "copy":
+          try {
+            await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+            showSnackbar("Link copied to clipboard!", "success");
+          } catch (error) {
+            // Only log in development
+            if (import.meta.env.DEV) {
+              console.warn(
+                "Clipboard API failed, falling back to prompt:",
+                error
+              );
+            }
+            // Fallback to prompt
+            const fallbackText = `${shareText}\n${shareUrl}`;
+            window.prompt("Copy hadith (Ctrl+C to copy)", fallbackText);
+            showSnackbar("Please copy the text manually", "info");
+          }
+          break;
+        default:
+          break;
+      }
+      setShowShareDialog(false);
+    },
+    [hadiths, selectedHadithForShare, shareNote, showSnackbar]
+  );
 
   const fontSizeMap = {
     small: "0.875rem",
