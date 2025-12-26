@@ -1,37 +1,98 @@
-.tofoform{
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    width: 500px;
-    margin:0 auto;
-    margin-top:50px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-.modernInput{
-    width: 100%;
-    border: none;
-    display:block;
-    color:black;
-    font-size:16px;
-
-}
-.modernInput:focus{
-    outline: none;
+.tofoform {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 500px;
+  margin: 0 auto;
+  margin-top: 50px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.3s ease-out;
 }
 
-.modernButton{
-    display:inline-block;
-    border:none;
-    border-radius: 4px;
-    background-color: #f7ca18;
-    color: #ffffff;
-    padding: 12px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-left: 10px;
-
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.inputContainer{
-    display:flex;
+
+.modernInput {
+  flex: 1;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: #333;
+  font-size: 16px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  font-family: inherit;
+}
+
+.modernInput:focus {
+  outline: none;
+  border-color: #f7ca18;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.1);
+}
+
+.modernInput::placeholder {
+  color: #999;
+}
+
+.modernButton {
+  border: none;
+  border-radius: 4px;
+  background-color: #f7ca18;
+  color: #ffffff;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+.modernButton:hover {
+  background-color: #e6b817;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(247, 202, 24, 0.3);
+}
+
+.modernButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(247, 202, 24, 0.2);
+}
+
+.modernButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.3);
+}
+
+.inputContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dark .tofoform {
+  background-color: #2d2d2d;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dark .modernInput {
+  background-color: #1a1a1a;
+  border-color: #444;
+  color: #fff;
+}
+
+.dark .modernInput::placeholder {
+  color: #888;
+}
+
+.dark .modernInput:focus {
+  border-color: #f7ca18;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.2);
 }
