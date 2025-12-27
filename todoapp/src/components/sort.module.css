@@ -1,0 +1,53 @@
+.sortContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+}
+
+.sortSelect {
+  padding: 6px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: #f7ca18;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.1);
+}
+
+.sortSelect:hover {
+  border-color: #f7ca18;
+}
+
+.dark .sortLabel {
+  color: #fff;
+}
+
+.dark .sortSelect {
+  background-color: #2d2d2d;
+  border-color: #444;
+  color: #fff;
+}
+
+.dark .sortSelect:hover {
+  border-color: #f7ca18;
+}
+
+.dark .sortSelect:focus {
+  border-color: #f7ca18;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.2);
+}
