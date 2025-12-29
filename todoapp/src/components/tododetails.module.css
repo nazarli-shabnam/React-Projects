@@ -1,0 +1,250 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.content {
+  padding: 20px;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.textarea,
+.input,
+.dateInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textarea:focus,
+.input:focus,
+.dateInput:focus {
+  outline: none;
+  border-color: #f7ca18;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.1);
+}
+
+.dateInput {
+  width: auto;
+  min-width: 200px;
+}
+
+.clearDate {
+  margin-left: 10px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.clearDate:hover {
+  background: #e0e0e0;
+}
+
+.overdue {
+  color: #f44336;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.cancelButton,
+.saveButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancelButton {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.cancelButton:hover {
+  background: #e0e0e0;
+}
+
+.saveButton {
+  background: #f7ca18;
+  color: #333;
+}
+
+.saveButton:hover {
+  background: #e6b817;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(247, 202, 24, 0.3);
+}
+
+.dark .modal {
+  background: #2d2d2d;
+}
+
+.dark .header {
+  border-bottom-color: #444;
+}
+
+.dark .header h2 {
+  color: #fff;
+}
+
+.dark .closeButton {
+  color: #ccc;
+}
+
+.dark .closeButton:hover {
+  background: #3d3d3d;
+  color: #fff;
+}
+
+.dark .field label {
+  color: #fff;
+}
+
+.dark .textarea,
+.dark .input,
+.dark .dateInput {
+  background: #1a1a1a;
+  border-color: #444;
+  color: #fff;
+}
+
+.dark .textarea:focus,
+.dark .input:focus,
+.dark .dateInput:focus {
+  border-color: #f7ca18;
+  box-shadow: 0 0 0 3px rgba(247, 202, 24, 0.2);
+}
+
+.dark .clearDate {
+  background: #3d3d3d;
+  border-color: #555;
+  color: #fff;
+}
+
+.dark .clearDate:hover {
+  background: #4d4d4d;
+}
+
+.dark .footer {
+  border-top-color: #444;
+}
+
+.dark .cancelButton {
+  background: #3d3d3d;
+  color: #fff;
+}
+
+.dark .cancelButton:hover {
+  background: #4d4d4d;
+}
