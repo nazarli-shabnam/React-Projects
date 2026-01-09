@@ -1,0 +1,96 @@
+.star {
+  display: inline-block;
+  transition: all 0.2s ease;
+  position: relative;
+  margin: 0 2px;
+  user-select: none;
+}
+
+.star:not(.readOnly):hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.star.active {
+  animation: starGlow 0.3s ease;
+}
+
+@keyframes starGlow {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.halfStarContainer {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+}
+
+.inactiveHalf {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  opacity: 0.3;
+}
+
+.activeHalf {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  clip-path: inset(0 50% 0 0);
+}
+
+.star:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.star.readOnly {
+  cursor: default;
+}
+
+.star.readOnly:hover {
+  transform: none;
+  filter: none;
+}
+
+/* Dark mode support */
+.dark .star {
+  filter: brightness(0.9);
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .star {
+    outline: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    transition: none;
+    animation: none;
+  }
+  
+  .star:not(.readOnly):hover {
+    transform: none;
+    filter: none;
+  }
+}
+
