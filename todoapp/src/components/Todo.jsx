@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Form from "./Form";
 import TodoList from "./TodoList";
 import Footer from "./Footer";
@@ -40,14 +40,12 @@ export default function Todo() {
     canRedo,
   } = useUndoRedo(todosFromHook);
 
-  // Sync with hook when it changes externally (e.g., import)
   useEffect(() => {
     const todosStr = JSON.stringify(todosFromHook);
     const currentStr = JSON.stringify(todos);
     if (todosStr !== currentStr) {
       setTodos(todosFromHook);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todosFromHook]);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,11 +55,9 @@ export default function Todo() {
   const [selectedIds, setSelectedIds] = useState([]);
   const { toasts, showToast, removeToast } = useToast();
 
-  // Wrap todos operations to update both hook and undo/redo
   const addTodo = useCallback(
     (name, options) => {
       addTodoHook(name, options);
-      // Update will be synced via useEffect
     },
     [addTodoHook]
   );
@@ -140,9 +136,7 @@ export default function Todo() {
       return matchesSearch && matchesFilter;
     });
 
-    // Sort todos
     result = [...result].sort((a, b) => {
-      // Always put completed todos at the bottom
       if (a.done !== b.done) {
         return Number(a.done) - Number(b.done);
       }
@@ -190,10 +184,11 @@ export default function Todo() {
   };
 
   const handleToggleTodo = (id) => {
-    toggleTodo(id);
     const todo = todos.find((t) => t.id === id);
+    const newDoneState = !todo?.done;
+    toggleTodo(id);
     showToast(
-      todo?.done ? "Todo marked as incomplete" : "Todo completed!",
+      newDoneState ? "Todo completed!" : "Todo marked as incomplete",
       "success"
     );
   };
@@ -211,7 +206,6 @@ export default function Todo() {
     importTodos(importedTodos);
   };
 
-  // Bulk actions
   const handleToggleSelect = useCallback((id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
@@ -257,14 +251,40 @@ export default function Todo() {
     setSelectedIds([]);
   }, [selectedIds, todos, setTodos, setTodosHook, showToast]);
 
+
+  const isUndoRedoRef = useRef(false);
+  
+  useEffect(() => {
+    const todosStr = JSON.stringify(todos);
+    const hookStr = JSON.stringify(todosFromHook);
+    if (todosStr !== hookStr && isUndoRedoRef.current) {
+      // This means undo/redo changed the state, sync it back
+      setTodosHook(todos);
+      isUndoRedoRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todos]);
+
+  // Wrapped undo/redo functions that set the flag for sync
+  const handleUndo = useCallback(() => {
+    isUndoRedoRef.current = true;
+    undo();
+    showToast("Undone", "info");
+  }, [undo, showToast]);
+
+  const handleRedo = useCallback(() => {
+    isUndoRedoRef.current = true;
+    redo();
+    showToast("Redone", "info");
+  }, [redo, showToast]);
+
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         if (canUndo) {
-          undo();
-          showToast("Undone", "info");
+          handleUndo();
         }
       } else if (
         (e.ctrlKey || e.metaKey) &&
@@ -272,23 +292,22 @@ export default function Todo() {
       ) {
         e.preventDefault();
         if (canRedo) {
-          redo();
-          showToast("Redone", "info");
+          handleRedo();
         }
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canUndo, canRedo, undo, redo, showToast]);
+  }, [canUndo, canRedo, handleUndo, handleRedo]);
 
   return (
     <div className={styles.todoContainer}>
       <UndoRedo
         canUndo={canUndo}
         canRedo={canRedo}
-        onUndo={undo}
-        onRedo={redo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
       <Form onAdd={handleAddTodo} />
       {todos.length > 0 && (
