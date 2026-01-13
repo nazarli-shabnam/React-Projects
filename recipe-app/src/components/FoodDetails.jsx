@@ -21,6 +21,77 @@ export default function FoodDetails({ foodId }) {
     }
   }, [recipe, addViewedRecipe]);
 
+  useEffect(() => {
+    let interval = null;
+    if (isTimerRunning && (timerMinutes > 0 || timerSeconds > 0)) {
+      interval = setInterval(() => {
+        if (timerSeconds > 0) {
+          setTimerSeconds((prev) => prev - 1);
+        } else if (timerMinutes > 0) {
+          setTimerMinutes((prev) => prev - 1);
+          setTimerSeconds(59);
+        } else {
+          setIsTimerRunning(false);
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Timer finished!");
+          }
+        }
+      }, 1000);
+    } else if (!isTimerRunning && timerMinutes === 0 && timerSeconds === 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timerMinutes, timerSeconds]);
+
+  const scaledIngredients = useMemo(() => {
+    if (!recipe || !recipe.extendedIngredients) return [];
+    const scaleFactor = servings / (recipe.servings || 1);
+    return recipe.extendedIngredients.map((ingredient) => ({
+      ...ingredient,
+      amount: (ingredient.amount * scaleFactor).toFixed(2),
+    }));
+  }, [recipe, servings]);
+
+  const handleStartTimer = (minutes) => {
+    setTimerMinutes(minutes);
+    setTimerSeconds(0);
+    setIsTimerRunning(true);
+  };
+
+  const handleStopTimer = () => {
+    setIsTimerRunning(false);
+  };
+
+  const handleResetTimer = () => {
+    setIsTimerRunning(false);
+    setTimerMinutes(0);
+    setTimerSeconds(0);
+  };
+
+  const formatTime = (minutes, seconds) => {
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  if (loading) {
+    return <RecipeDetailsSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className={styles.errorContainer}>
+        <h2>⚠️ Error loading recipe</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (!recipe) {
+    return (
+      <div className={styles.emptyContainer}>
+        <p>Select a recipe to view details</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.detailsContainer}>
