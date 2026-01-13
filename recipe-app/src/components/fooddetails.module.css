@@ -59,7 +59,21 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.recipeInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
 
+.infoBadge {
+  padding: 8px 16px;
+  background: #f0f0ff;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #667eea;
+  border: 1px solid #e0e0ff;
+}
 
 .priceInfo {
   padding: 15px;
@@ -96,7 +110,15 @@
   border-radius: 6px;
 }
 
+.nutritionLabel {
+  font-weight: 600;
+  color: #666;
+}
 
+.nutritionValue {
+  color: #333;
+  font-weight: 700;
+}
 
 .scalingSection {
   margin: 30px 0;
