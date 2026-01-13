@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./tododetails.module.css";
 
 export default function TodoDetails({ todo, onUpdate, onClose }) {
@@ -6,6 +6,14 @@ export default function TodoDetails({ todo, onUpdate, onClose }) {
   const [dueDate, setDueDate] = useState(todo.dueDate || "");
   const [category, setCategory] = useState(todo.category || "");
   const [tags, setTags] = useState(todo.tags?.join(", ") || "");
+
+  // Sync state when todo prop changes
+  useEffect(() => {
+    setDescription(todo.description || "");
+    setDueDate(todo.dueDate || "");
+    setCategory(todo.category || "");
+    setTags(todo.tags?.join(", ") || "");
+  }, [todo]);
 
   function handleSave() {
     onUpdate(todo.id, {
