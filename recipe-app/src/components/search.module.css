@@ -16,7 +16,39 @@
   align-items: center;
 }
 
+.input {
+  flex: 1;
+  padding: 15px 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  transition: all 0.3s ease;
+}
 
+.input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.searchButton {
+  padding: 15px 25px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.searchButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
 
 .suggestions {
   position: absolute;
@@ -52,6 +84,17 @@
   border-bottom: 1px solid #e0e0e0;
   font-weight: 600;
   color: #666;
+}
+
+.clearButton {
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .clearButton:hover {
@@ -93,7 +136,20 @@
     border-color: rgba(255, 255, 255, 0.4);
   }
 
+  .suggestions {
+    background: #2d2d2d;
+  }
 
+  .suggestionsHeader {
+    border-bottom-color: #555;
+    color: #ccc;
+  }
+
+  .clearButton {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #fff;
+  }
 
   .clearButton:hover {
     background: #4d4d4d;
