@@ -5,6 +5,14 @@ import styles from "./fooditem.module.css";
 const FoodItem = memo(function FoodItem({ food, setFoodId }) {
   const { isFavorite, toggleFavorite } = useRecipeContext();
 
+  const handleViewRecipe = () => {
+    setFoodId(food.id);
+  };
+
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    toggleFavorite(food);
+  };
 
   return (
     <div className={styles.itemContainer}>
