@@ -1,18 +1,91 @@
-import { useEffect,useState } from "react";
-import styles from "./search.module.css"
-const URL="https://api.spoonacular.com/recipes/complexSearch"
-const API_KEY="e9f14b6dedc54e7d9d1d92380399152b"
-export default function Search({foodData, setFoodData}) {
-    const [query, setQuery] = useState("pizza");
-    useEffect(() => {async function fetchFood() {
-        const res= await fetch(`${URL}?query=${query}&apiKey=${API_KEY}`)
-        const data=await res.json()
-        console.log(data.results)
-        setFoodData(data.results)
+import { useState, useEffect, useRef } from "react";
+import { useDebounce } from "../hooks/useDebounce";
+import { useRecipeContext } from "../contexts/RecipeContext";
+import styles from "./search.module.css";
+
+export default function Search({ onSearch, onQueryChange }) {
+  const [query, setQuery] = useState("pizza");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debouncedQuery = useDebounce(query, 300);
+  const { recentSearches, addRecentSearch, clearRecentSearches } = useRecipeContext();
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (debouncedQuery && debouncedQuery.trim() !== "") {
+      onQueryChange(debouncedQuery);
+      if (onSearch) onSearch(debouncedQuery);
     }
-    fetchFood()
-    },[query])
-    return <div className={styles.searchContainer}>
-        <input className={styles.input} value={query} onChange={(e)=>setQuery(e.target.value)} ></input>
-    </div>;
+  }, [debouncedQuery, onQueryChange, onSearch]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (query.trim() !== "") {
+      addRecentSearch(query.trim());
+      setShowSuggestions(false);
+      if (onSearch) onSearch(query.trim());
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setQuery(suggestion);
+    addRecentSearch(suggestion);
+    setShowSuggestions(false);
+    if (onSearch) onSearch(suggestion);
+  };
+
+  const handleClearRecent = () => {
+    clearRecentSearches();
+  };
+
+  return (
+    <div className={styles.searchContainer}>
+      <form onSubmit={handleSubmit} className={styles.searchForm}>
+        <div className={styles.inputWrapper}>
+          <input
+            ref={inputRef}
+            className={styles.input}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            placeholder="Search for recipes..."
+            aria-label="Search recipes"
+          />
+          <button type="submit" className={styles.searchButton} aria-label="Search">
+            🔍
+          </button>
+        </div>
+
+        {showSuggestions && recentSearches.length > 0 && (
+          <div className={styles.suggestions}>
+            <div className={styles.suggestionsHeader}>
+              <span>Recent Searches</span>
+              <button
+                type="button"
+                onClick={handleClearRecent}
+                className={styles.clearButton}
+                aria-label="Clear recent searches"
+              >
+                Clear
+              </button>
+            </div>
+            <ul className={styles.suggestionsList}>
+              {recentSearches.map((search, index) => (
+                <li key={index}>
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestionClick(search)}
+                    className={styles.suggestionItem}
+                  >
+                    {search}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </form>
+    </div>
+  );
 }

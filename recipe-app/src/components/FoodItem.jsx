@@ -1,17 +1,57 @@
+import { memo } from "react";
+import { useRecipeContext } from "../contexts/RecipeContext";
 import styles from "./fooditem.module.css";
-export default function FoodItem({ food,setFoodId }) {
+
+const FoodItem = memo(function FoodItem({ food, setFoodId }) {
+  const { isFavorite, toggleFavorite } = useRecipeContext();
+
+  const handleViewRecipe = () => {
+    setFoodId(food.id);
+  };
+
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    toggleFavorite(food);
+  };
+
   return (
     <div className={styles.itemContainer}>
-      <img className={styles.itemImage} src={food.image} alt={food.title} />
+      <div className={styles.imageWrapper}>
+        <img
+          className={styles.itemImage}
+          src={food.image}
+          alt={food.title}
+          loading="lazy"
+        />
+        <button
+          className={`${styles.favoriteButton} ${
+            isFavorite(food.id) ? styles.favorited : ""
+          }`}
+          onClick={handleFavoriteClick}
+          aria-label={isFavorite(food.id) ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFavorite(food.id) ? "❤️" : "🤍"}
+        </button>
+      </div>
       <div className={styles.itemContent}>
         <p className={styles.itemName}>{food.title}</p>
+        {food.readyInMinutes && (
+          <p className={styles.itemTime}>⏰ {food.readyInMinutes} min</p>
+        )}
       </div>
       <div className={styles.buttonContainer}>
-        {" "}
-        <button onClick={()=>{console.log(food.id)
-          setFoodId(food.id)
-        } }className={styles.itemButton}>View Recipe</button>
+        <button
+          onClick={handleViewRecipe}
+          className={styles.itemButton}
+          aria-label={`View recipe for ${food.title}`}
+        >
+          View Recipe
+        </button>
       </div>
     </div>
   );
-};
+});
+
+FoodItem.displayName = "FoodItem";
+
+export default FoodItem;

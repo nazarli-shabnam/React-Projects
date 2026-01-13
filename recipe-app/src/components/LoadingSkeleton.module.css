@@ -1,0 +1,181 @@
+.recipeCardSkeleton {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.imageSkeleton {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.contentSkeleton {
+  padding: 20px;
+}
+
+.titleSkeleton {
+  height: 20px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  width: 80%;
+}
+
+.textSkeleton {
+  height: 16px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  width: 60%;
+}
+
+.buttonSkeleton {
+  height: 40px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+  width: 120px;
+  margin-top: 15px;
+}
+
+.detailsSkeleton {
+  padding: 20px;
+}
+
+.headerSkeleton {
+  margin-bottom: 30px;
+}
+
+.infoSkeleton {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.badgeSkeleton {
+  height: 30px;
+  width: 100px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 20px;
+}
+
+.sectionSkeleton {
+  margin-bottom: 30px;
+}
+
+.sectionTitleSkeleton {
+  height: 24px;
+  width: 150px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.listSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listItemSkeleton {
+  height: 20px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  width: 90%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .recipeCardSkeleton,
+  .detailsSkeleton {
+    background: #2d2d2d;
+  }
+
+  .imageSkeleton,
+  .titleSkeleton,
+  .textSkeleton,
+  .buttonSkeleton,
+  .badgeSkeleton,
+  .sectionTitleSkeleton,
+  .listItemSkeleton {
+    background: linear-gradient(
+      90deg,
+      #3d3d3d 25%,
+      #4d4d4d 50%,
+      #3d3d3d 75%
+    );
+    background-size: 200% 100%;
+  }
+}
+
