@@ -1,6 +1,58 @@
 import { useState } from "react";
 import styles from "./Filters.module.css";
 
+const CUISINES = [
+  "African",
+  "American",
+  "British",
+  "Cajun",
+  "Caribbean",
+  "Chinese",
+  "Eastern European",
+  "European",
+  "French",
+  "German",
+  "Greek",
+  "Indian",
+  "Irish",
+  "Italian",
+  "Japanese",
+  "Jewish",
+  "Korean",
+  "Latin American",
+  "Mediterranean",
+  "Mexican",
+  "Middle Eastern",
+  "Nordic",
+  "Southern",
+  "Spanish",
+  "Thai",
+  "Vietnamese",
+];
+
+const DIETS = [
+  "Gluten Free",
+  "Ketogenic",
+  "Vegetarian",
+  "Lacto-Vegetarian",
+  "Ovo-Vegetarian",
+  "Vegan",
+  "Pescetarian",
+  "Paleo",
+  "Primal",
+  "Whole30",
+];
+
+const MEAL_TYPES = ["main course", "side dish", "dessert", "appetizer", "salad", "bread", "breakfast", "soup", "beverage", "sauce", "marinade", "fingerfood", "snack", "drink"];
+
+const SORT_OPTIONS = [
+  { value: "", label: "Relevance" },
+  { value: "popularity", label: "Popularity" },
+  { value: "healthiness", label: "Healthiness" },
+  { value: "price", label: "Price" },
+  { value: "time", label: "Time" },
+  { value: "random", label: "Random" },
+];
 
 export default function Filters({ filters, onFilterChange, onReset }) {
   const [isOpen, setIsOpen] = useState(false);
