@@ -82,4 +82,12 @@ export async function getSimilarRecipes(id, number = 5) {
   return fetchAPI(`/recipes/${id}/similar?number=${number}`);
 }
 
+export async function getRecipeNutrition(id) {
+  return fetchAPI(`/recipes/${id}/nutritionWidget.json`);
+}
+
+export async function getRandomRecipes(number = 10, tags = "") {
+  const params = tags ? `&tags=${tags}` : "";
+  return fetchAPI(`/recipes/random?number=${number}${params}`);
+}
 
