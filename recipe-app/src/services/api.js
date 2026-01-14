@@ -78,4 +78,8 @@ export async function getRecipeInformation(id) {
 }
 
 
+export async function getSimilarRecipes(id, number = 5) {
+  return fetchAPI(`/recipes/${id}/similar?number=${number}`);
+}
+
 
