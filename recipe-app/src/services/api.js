@@ -9,8 +9,11 @@ if (!API_KEY) {
 
 async function fetchAPI(endpoint, options = {}) {
   try {
-    const url = `${API_BASE_URL}${endpoint}${endpoint.includes("?") ? "&" : "?"}apiKey=${API_KEY}`;
-    
+    const [path, existingQuery = ""] = endpoint.split("?");
+    const params = new URLSearchParams(existingQuery);
+    params.set("apiKey", API_KEY);
+    const url = `${API_BASE_URL}${path}?${params.toString()}`;
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -21,9 +24,7 @@ async function fetchAPI(endpoint, options = {}) {
 
     if (!response.ok) {
       if (response.status === 429) {
-        throw new Error(
-          "API rate limit exceeded. Please try again later."
-        );
+        throw new Error("API rate limit exceeded. Please try again later.");
       }
 
       if (response.status === 401) {
@@ -77,7 +78,6 @@ export async function getRecipeInformation(id) {
   return fetchAPI(`/recipes/${id}/information?includeNutrition=true`);
 }
 
-
 export async function getSimilarRecipes(id, number = 5) {
   return fetchAPI(`/recipes/${id}/similar?number=${number}`);
 }
@@ -90,4 +90,3 @@ export async function getRandomRecipes(number = 10, tags = "") {
   const params = tags ? `&tags=${tags}` : "";
   return fetchAPI(`/recipes/random?number=${number}${params}`);
 }
-
