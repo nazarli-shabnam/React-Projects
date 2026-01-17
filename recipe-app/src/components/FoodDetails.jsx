@@ -37,10 +37,12 @@ export default function FoodDetails({ foodId }) {
           }
         }
       }, 1000);
-    } else if (!isTimerRunning && timerMinutes === 0 && timerSeconds === 0) {
-      clearInterval(interval);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [isTimerRunning, timerMinutes, timerSeconds]);
 
   const scaledIngredients = useMemo(() => {
@@ -194,7 +196,20 @@ export default function FoodDetails({ foodId }) {
               type="number"
               min="1"
               value={servings}
-              onChange={(e) => setServings(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => {
+                const value = parseInt(e.target.value, 10);
+                if (!isNaN(value) && value > 0) {
+                  setServings(value);
+                } else if (e.target.value === "") {
+                  setServings(1);
+                }
+              }}
+              onBlur={(e) => {
+                const value = parseInt(e.target.value, 10);
+                if (isNaN(value) || value < 1) {
+                  setServings(1);
+                }
+              }}
               className={styles.servingsInput}
             />
             <button
