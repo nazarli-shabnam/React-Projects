@@ -108,7 +108,7 @@ export default function Filters({ filters, onFilterChange, onReset }) {
             >
               <option value="">All Diets</option>
               {DIETS.map((diet) => (
-                <option key={diet} value={diet.toLowerCase().replace(" ", "-")}>
+                <option key={diet} value={diet.toLowerCase().replace(/\s+/g, "-")}>
                   {diet}
                 </option>
               ))}
