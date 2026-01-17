@@ -29,14 +29,15 @@ function AppContent() {
     goToPage,
   } = useRecipes("pizza");
 
-  const currentPage = Math.floor(pagination.offset / pagination.number) + 1;
-  const totalPages = Math.ceil(pagination.totalResults / pagination.number);
+  const resultsPerPage = pagination.number || 10;
+  const currentPage = Math.floor(pagination.offset / resultsPerPage) + 1;
+  const totalPages = Math.max(1, Math.ceil(pagination.totalResults / resultsPerPage));
 
   return (
     <div>
       <Nav />
       <ErrorBoundary>
-        <Search onQueryChange={updateQuery} />
+        <Search onQueryChange={updateQuery} initialQuery={query} />
         <Container>
           <InnerContainer>
             <Filters
