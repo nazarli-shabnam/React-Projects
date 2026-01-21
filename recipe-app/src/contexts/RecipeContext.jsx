@@ -1,7 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 
 const RecipeContext = createContext(null);
-
 
 export function RecipeProvider({ children }) {
   const [favorites, setFavorites] = useState([]);
@@ -9,56 +14,101 @@ export function RecipeProvider({ children }) {
   const [viewedRecipes, setViewedRecipes] = useState([]);
 
   useEffect(() => {
-    const savedFavorites = localStorage.getItem("recipeApp_favorites");
-    const savedRecentSearches = localStorage.getItem("recipeApp_recentSearches");
-    const savedViewedRecipes = localStorage.getItem("recipeApp_viewedRecipes");
+    try {
+      const savedFavorites = localStorage.getItem("recipeApp_favorites");
+      const savedRecentSearches = localStorage.getItem(
+        "recipeApp_recentSearches"
+      );
+      const savedViewedRecipes = localStorage.getItem(
+        "recipeApp_viewedRecipes"
+      );
 
-    if (savedFavorites) {
-      try {
-        setFavorites(JSON.parse(savedFavorites));
-      } catch (e) {
-        console.error("Failed to load favorites", e);
+      if (savedFavorites) {
+        try {
+          setFavorites(JSON.parse(savedFavorites));
+        } catch (e) {
+          console.error("Failed to parse favorites", e);
+          localStorage.removeItem("recipeApp_favorites");
+        }
       }
-    }
 
-    if (savedRecentSearches) {
-      try {
-        setRecentSearches(JSON.parse(savedRecentSearches));
-      } catch (e) {
-        console.error("Failed to load recent searches", e);
+      if (savedRecentSearches) {
+        try {
+          setRecentSearches(JSON.parse(savedRecentSearches));
+        } catch (e) {
+          console.error("Failed to parse recent searches", e);
+          localStorage.removeItem("recipeApp_recentSearches");
+        }
       }
-    }
 
-    if (savedViewedRecipes) {
-      try {
-        setViewedRecipes(JSON.parse(savedViewedRecipes));
-      } catch (e) {
-        console.error("Failed to load viewed recipes", e);
+      if (savedViewedRecipes) {
+        try {
+          setViewedRecipes(JSON.parse(savedViewedRecipes));
+        } catch (e) {
+          console.error("Failed to parse viewed recipes", e);
+          localStorage.removeItem("recipeApp_viewedRecipes");
+        }
       }
+    } catch (e) {
+      console.error("localStorage is not available or access denied", e);
     }
   }, []);
 
   useEffect(() => {
-    if (favorites.length > 0) {
-      localStorage.setItem("recipeApp_favorites", JSON.stringify(favorites));
+    try {
+      if (favorites.length > 0) {
+        localStorage.setItem("recipeApp_favorites", JSON.stringify(favorites));
+      } else {
+        localStorage.removeItem("recipeApp_favorites");
+      }
+    } catch (e) {
+      if (e.name === "QuotaExceededError") {
+        console.error("localStorage quota exceeded. Cannot save favorites.");
+      } else {
+        console.error("Failed to save favorites to localStorage", e);
+      }
     }
   }, [favorites]);
 
   useEffect(() => {
-    if (recentSearches.length > 0) {
-      localStorage.setItem(
-        "recipeApp_recentSearches",
-        JSON.stringify(recentSearches.slice(0, 10))
-      );
+    try {
+      if (recentSearches.length > 0) {
+        localStorage.setItem(
+          "recipeApp_recentSearches",
+          JSON.stringify(recentSearches.slice(0, 10))
+        );
+      } else {
+        localStorage.removeItem("recipeApp_recentSearches");
+      }
+    } catch (e) {
+      if (e.name === "QuotaExceededError") {
+        console.error(
+          "localStorage quota exceeded. Cannot save recent searches."
+        );
+      } else {
+        console.error("Failed to save recent searches to localStorage", e);
+      }
     }
   }, [recentSearches]);
 
   useEffect(() => {
-    if (viewedRecipes.length > 0) {
-      localStorage.setItem(
-        "recipeApp_viewedRecipes",
-        JSON.stringify(viewedRecipes.slice(0, 20))
-      );
+    try {
+      if (viewedRecipes.length > 0) {
+        localStorage.setItem(
+          "recipeApp_viewedRecipes",
+          JSON.stringify(viewedRecipes.slice(0, 20))
+        );
+      } else {
+        localStorage.removeItem("recipeApp_viewedRecipes");
+      }
+    } catch (e) {
+      if (e.name === "QuotaExceededError") {
+        console.error(
+          "localStorage quota exceeded. Cannot save viewed recipes."
+        );
+      } else {
+        console.error("Failed to save viewed recipes to localStorage", e);
+      }
     }
   }, [viewedRecipes]);
 
@@ -73,14 +123,17 @@ export function RecipeProvider({ children }) {
     setFavorites((prev) => prev.filter((r) => r.id !== recipeId));
   }, []);
 
-  const toggleFavorite = useCallback((recipe) => {
-    const isFavorite = favorites.find((r) => r.id === recipe.id);
-    if (isFavorite) {
-      removeFavorite(recipe.id);
-    } else {
-      addFavorite(recipe);
-    }
-  }, [favorites, addFavorite, removeFavorite]);
+  const toggleFavorite = useCallback(
+    (recipe) => {
+      const isFavorite = favorites.find((r) => r.id === recipe.id);
+      if (isFavorite) {
+        removeFavorite(recipe.id);
+      } else {
+        addFavorite(recipe);
+      }
+    },
+    [favorites, addFavorite, removeFavorite]
+  );
 
   const isFavorite = useCallback(
     (recipeId) => {
@@ -99,7 +152,11 @@ export function RecipeProvider({ children }) {
 
   const clearRecentSearches = useCallback(() => {
     setRecentSearches([]);
-    localStorage.removeItem("recipeApp_recentSearches");
+    try {
+      localStorage.removeItem("recipeApp_recentSearches");
+    } catch (e) {
+      console.error("Failed to clear recent searches from localStorage", e);
+    }
   }, []);
 
   const addViewedRecipe = useCallback((recipe) => {
@@ -136,4 +193,3 @@ export function useRecipeContext() {
   }
   return context;
 }
-
