@@ -25,13 +25,11 @@ export function useRecipeDetails(recipeId) {
     if (data) {
       setRecipe(data);
 
-      // Fetch similar recipes
       const { data: similarData, error: similarError } =
         await getSimilarRecipes(id);
       if (similarData) {
         setSimilarRecipes(similarData);
       } else if (similarError) {
-        // Log error but don't fail the whole recipe load
         console.warn("Failed to load similar recipes:", similarError);
         setSimilarRecipes([]);
       }
@@ -42,7 +40,6 @@ export function useRecipeDetails(recipeId) {
 
   useEffect(() => {
     fetchRecipeDetails(recipeId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeId]);
 
   return {

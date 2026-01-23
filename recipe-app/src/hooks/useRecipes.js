@@ -19,41 +19,38 @@ export function useRecipes(initialQuery = "pizza") {
     totalResults: 0,
   });
 
-  const fetchRecipes = useCallback(
-    async (searchQuery = query, searchFilters = filters, paginationParams = pagination) => {
-      setLoading(true);
-      setError(null);
+  const fetchRecipes = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      const { data, error: apiError } = await searchRecipes({
-        query: searchQuery,
-        ...searchFilters,
-        offset: paginationParams.offset,
-        number: paginationParams.number,
-      });
+    const { data, error: apiError } = await searchRecipes({
+      query,
+      ...filters,
+      offset: pagination.offset,
+      number: pagination.number,
+    });
 
-      if (apiError) {
-        setError(apiError);
-        setRecipes([]);
-        setLoading(false);
-        return;
-      }
-
-      if (data) {
-        setRecipes(data.results || []);
-        setPagination((prev) => ({
-          ...prev,
-          totalResults: data.totalResults || 0,
-        }));
-      }
-
+    if (apiError) {
+      setError(apiError);
+      setRecipes([]);
       setLoading(false);
-    },
-    [query, filters, pagination]
-  );
+      return;
+    }
+
+    if (data) {
+      setRecipes(data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        totalResults: data.totalResults || 0,
+      }));
+    }
+
+    setLoading(false);
+  }, [query, filters, pagination.offset, pagination.number]);
 
   useEffect(() => {
     fetchRecipes();
-  }, [query, filters, pagination.offset]);
+  }, [fetchRecipes]);
 
   const updateQuery = useCallback((newQuery) => {
     setQuery(newQuery);
