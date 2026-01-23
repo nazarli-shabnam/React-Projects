@@ -3,8 +3,8 @@ import { useDebounce } from "../hooks/useDebounce";
 import { useRecipeContext } from "../contexts/RecipeContext";
 import styles from "./search.module.css";
 
-export default function Search({ onSearch, onQueryChange }) {
-  const [query, setQuery] = useState("pizza");
+export default function Search({ onSearch, onQueryChange, initialQuery = "" }) {
+  const [query, setQuery] = useState(initialQuery);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debouncedQuery = useDebounce(query, 300);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useRecipeContext();
