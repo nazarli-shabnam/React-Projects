@@ -24,11 +24,16 @@ export function useRecipeDetails(recipeId) {
 
     if (data) {
       setRecipe(data);
-      
+
       // Fetch similar recipes
-      const { data: similarData } = await getSimilarRecipes(id);
+      const { data: similarData, error: similarError } =
+        await getSimilarRecipes(id);
       if (similarData) {
         setSimilarRecipes(similarData);
+      } else if (similarError) {
+        // Log error but don't fail the whole recipe load
+        console.warn("Failed to load similar recipes:", similarError);
+        setSimilarRecipes([]);
       }
     }
 
@@ -37,7 +42,8 @@ export function useRecipeDetails(recipeId) {
 
   useEffect(() => {
     fetchRecipeDetails(recipeId);
-  }, [recipeId, fetchRecipeDetails]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipeId]);
 
   return {
     recipe,
@@ -47,4 +53,3 @@ export function useRecipeDetails(recipeId) {
     refetch: () => fetchRecipeDetails(recipeId),
   };
 }
-
